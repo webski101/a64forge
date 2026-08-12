@@ -4,7 +4,7 @@ from pathlib import Path
 from a64forge.optimizer.compiler import compile_deployment
 from a64forge.optimizer.service import optimize_records
 from a64forge.report.generator import generate_report
-from a64forge.schemas import Detection, HardwareInfo
+from a64forge.schemas import Detection, HardwareInfo, OptimizationStatus
 
 
 def test_optimize_compile_report_pipeline(tmp_path: Path, make_record, sample_workflow) -> None:
@@ -26,3 +26,36 @@ def test_optimize_compile_report_pipeline(tmp_path: Path, make_record, sample_wo
     assert len(reports) == 3
     assert "DEMO DATA" in reports[0].read_text(encoding="utf-8")
 
+
+def test_non_deployable_result_emits_evidence_without_routing(
+    tmp_path: Path, make_record, sample_workflow
+) -> None:
+    baseline = make_record(model="large", quality=0.70, baseline=True)
+    result = optimize_records([baseline], sample_workflow)
+    assert result.status == OptimizationStatus.NO_QUALIFYING_CANDIDATE
+
+    destination = tmp_path / "dist"
+    destination.mkdir()
+    (destination / "routing.yaml").write_text("stale: true\n")
+    (destination / "Dockerfile.arm64").write_text("FROM stale\n")
+    compiled = compile_deployment(result, tmp_path / "dist")
+    manifest = json.loads((tmp_path / "dist" / "a64forge-manifest.json").read_text())
+    assert len(compiled) == 3
+    assert manifest["deployable"] is False
+    assert manifest["status"] == "NO QUALIFYING CANDIDATE"
+    assert manifest["stages"] == {}
+    assert not (tmp_path / "dist" / "routing.yaml").exists()
+    assert not (tmp_path / "dist" / "Dockerfile.arm64").exists()
+
+    hardware = HardwareInfo(
+        architecture="aarch64", cpu_model="fixture", logical_cores=4, physical_cores=4,
+        memory_gb=16, available_memory_gb=8, os="test", hostname="fixture", arm64=True,
+        neon=Detection.DETECTED, sve=Detection.UNKNOWN, sve2=Detection.UNKNOWN,
+        arm_fma=Detection.UNKNOWN, matmul_int8=Detection.DETECTED, disk_free_gb=10,
+        dev_mode=False,
+    )
+    reports = generate_report(result, hardware, tmp_path / "reports")
+    report_manifest = json.loads(reports[2].read_text())
+    assert report_manifest["deployable"] is False
+    assert report_manifest["rejected_stages"] == ["classify"]
+    assert "No route compiled" in reports[0].read_text(encoding="utf-8")

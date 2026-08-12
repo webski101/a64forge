@@ -85,13 +85,22 @@ export interface Selection {
   score: number;
 }
 
+export interface StageRejection {
+  stage_id: string;
+  quality_floor: number;
+  best_candidate: BenchmarkRecord | null;
+  reason: string;
+}
+
 export interface Optimization {
   optimization_id: string;
   run_id: string;
   target: string;
   workflow: string;
   run_label: BenchmarkRecord["run_label"];
+  status: "DEPLOYABLE" | "NO QUALIFYING CANDIDATE";
   selections: Selection[];
+  rejections: StageRejection[];
   baseline: BenchmarkRecord[];
 }
 
@@ -103,4 +112,3 @@ export interface ProgressEvent {
   progress: number | null;
   timestamp: string;
 }
-

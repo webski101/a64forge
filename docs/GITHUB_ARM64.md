@@ -8,7 +8,7 @@ AWS plan upgrade, or leave a server running after the job finishes.
 
 - Native `aarch64` host evidence from the ephemeral runner.
 - A pinned `llama.cpp` release compiled with `-mcpu=native`.
-- Qwen3 0.6B Q4/Q8 and Qwen3 1.7B Q4 configurations.
+- Qwen3 0.6B Q4/Q8, Qwen3 1.7B Q4, and Qwen3 4B Q4 configurations.
 - Five deterministic ResearchOps stages with quality gates.
 - Latency, throughput, process memory/CPU, model and dataset hashes.
 
@@ -25,8 +25,10 @@ memory, disk, and six-hour job limit. It does not replace `configs/default.yaml`
 6. Open the completed run and download `a64forge-arm64-evidence-<run-id>`.
 
 The workflow is manual-only and has a five-hour hard timeout. It validates that
-the report label is `VERIFIED ARM64 RUN` before completing successfully. Models
-are not included in the uploaded artifact.
+the report label is `VERIFIED ARM64 RUN` before completing successfully. If no
+candidate passes every quality gate, the run still preserves a clear
+`NO QUALIFYING CANDIDATE` report and withholds deployable routing and Docker
+files. Models are not included in the uploaded artifact.
 
 ## Important limitations
 

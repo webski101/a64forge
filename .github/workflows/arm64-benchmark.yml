@@ -139,8 +139,16 @@ jobs:
               handle.write("# A64Forge native Arm64 evidence\n\n")
               handle.write(f"- Run: `{manifest['run_id']}`\n")
               handle.write(f"- Label: **{manifest['run_label']}**\n")
+              handle.write(f"- Optimization: **{manifest['status']}**\n")
+              handle.write(f"- Deployable: **{manifest['deployable']}**\n")
               handle.write(f"- Architecture: `{manifest['architecture']}`\n")
               handle.write(f"- CPU: `{manifest['cpu']}`\n")
+              if manifest["rejected_stages"]:
+                  handle.write(
+                      "- Rejected stages: "
+                      + ", ".join(f"`{item}`" for item in manifest["rejected_stages"])
+                      + "\n"
+                  )
               handle.write("- Download the `a64forge-arm64-evidence` artifact for the report.\n")
           PY
 

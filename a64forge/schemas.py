@@ -20,6 +20,11 @@ class RunLabel(StrEnum):
     UNVERIFIED = "UNVERIFIED RUN"
 
 
+class OptimizationStatus(StrEnum):
+    DEPLOYABLE = "DEPLOYABLE"
+    NO_QUALIFYING_CANDIDATE = "NO QUALIFYING CANDIDATE"
+
+
 class HardwareInfo(BaseModel):
     architecture: str
     cpu_model: str
@@ -236,6 +241,13 @@ class StageSelection(BaseModel):
     score: float
 
 
+class StageRejection(BaseModel):
+    stage_id: str
+    quality_floor: float = Field(ge=0, le=1)
+    best_candidate: BenchmarkRecord | None = None
+    reason: str
+
+
 class OptimizationResult(BaseModel):
     optimization_id: str
     run_id: str
@@ -243,9 +255,23 @@ class OptimizationResult(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     workflow: str
     minimum_quality: float
+    status: OptimizationStatus = OptimizationStatus.DEPLOYABLE
     selections: list[StageSelection]
+    rejections: list[StageRejection] = Field(default_factory=list)
     baseline: list[BenchmarkRecord]
     run_label: RunLabel
+
+    @property
+    def deployable(self) -> bool:
+        return self.status == OptimizationStatus.DEPLOYABLE and not self.rejections
+
+    @model_validator(mode="after")
+    def status_matches_rejections(self) -> OptimizationResult:
+        if self.rejections and self.status != OptimizationStatus.NO_QUALIFYING_CANDIDATE:
+            raise ValueError("optimization results with rejected stages cannot be deployable")
+        if not self.rejections and self.status == OptimizationStatus.NO_QUALIFYING_CANDIDATE:
+            raise ValueError("a non-deployable optimization result must identify rejected stages")
+        return self
 
 
 class ProgressEvent(BaseModel):
@@ -255,4 +281,3 @@ class ProgressEvent(BaseModel):
     candidate_key: str | None = None
     progress: float | None = Field(default=None, ge=0, le=1)
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
-

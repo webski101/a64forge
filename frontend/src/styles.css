@@ -63,6 +63,7 @@ code, .machine-line { font-family: var(--font-mono); }
 .run-label { width: fit-content; display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) var(--space-sm); border: var(--rule-thin) solid currentColor; border-radius: var(--radius-sm); font: 500 var(--text-xs)/1 var(--font-mono); white-space: nowrap; }
 .run-label--verified { color: var(--color-accent); }
 .run-label--warning { color: var(--color-warning); }
+.result-labels { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
 .metric-strip { display: grid; border-bottom: var(--rule-thin) solid var(--color-rule); }
 .metric-strip > div { display: grid; gap: var(--space-2xs); padding: var(--space-lg) 0; border-bottom: var(--rule-thin) solid var(--color-rule); }
 .metric-strip > div:last-child { border-bottom: 0; }
@@ -78,6 +79,7 @@ code, .machine-line { font-family: var(--font-mono); }
 .workflow-fragment { display: contents; }
 .workflow-node { min-width: 0; padding: var(--space-md); background: var(--color-panel); color: var(--color-body); border: var(--rule-thin) solid var(--color-rule); border-radius: var(--radius-sm); }
 .workflow-node--selected { border-color: var(--color-accent); background: var(--color-panel-raised); }
+.workflow-node--rejected { border-color: var(--color-warning); }
 .workflow-node__head { display: flex; align-items: center; gap: var(--space-xs); margin-bottom: var(--space-lg); color: var(--color-muted); font: 500 var(--text-xs)/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; }
 .workflow-node > strong { color: var(--color-ink); font: 700 var(--text-md)/1 var(--font-display); }
 .workflow-node dl { display: grid; gap: var(--space-xs); margin: var(--space-lg) 0 0; }
@@ -114,6 +116,7 @@ code, .machine-line { font-family: var(--font-mono); }
 .decisions > h2 { margin-bottom: var(--space-lg); }
 .decisions article { padding-block: var(--space-lg); border-top: var(--rule-thin) solid var(--color-rule); }
 .decisions article p { margin-top: var(--space-sm); color: var(--color-accent); font-family: var(--font-mono); }
+.decisions .decision--rejected p { color: var(--color-warning); }
 .decisions ul { color: var(--color-muted); }
 .chart { margin-bottom: var(--space-xl); padding-block: var(--space-lg); border-block: var(--rule-thin) solid var(--color-rule); }
 .chart h2 { margin-bottom: var(--space-lg); }

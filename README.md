@@ -144,6 +144,12 @@ The balanced preset is:
 
 Latency and memory scores are inverted because lower is better. Only candidates satisfying `minimum_quality` and `maximum_quality_drop` reach the Pareto frontier. Exact details are in [docs/BENCHMARKING.md](docs/BENCHMARKING.md).
 
+If any workflow stage has no qualifying candidate, optimization returns an
+explicit `NO QUALIFYING CANDIDATE` result instead of discarding the completed
+measurements. Reports identify the rejected stages, while compilation emits
+only a non-deployable manifest, benchmark summary, and warning README. Routing
+and Docker deployment files are withheld.
+
 ## API
 
 ```text

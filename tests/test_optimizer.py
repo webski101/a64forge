@@ -1,6 +1,7 @@
 from a64forge.optimizer.pareto import dominates, frontier
 from a64forge.optimizer.scorer import score_records
 from a64forge.optimizer.service import optimize_records
+from a64forge.schemas import OptimizationStatus
 
 
 def test_pareto_dominance(make_record) -> None:
@@ -24,4 +25,19 @@ def test_quality_gate_and_explicit_baseline(make_record, sample_workflow) -> Non
     result = optimize_records([baseline, winner, invalid], sample_workflow, "balanced")
     assert result.baseline[0].model == "large"
     assert result.selections[0].selected.model == "small"
+    assert result.status == OptimizationStatus.DEPLOYABLE
+    assert result.rejections == []
 
+
+def test_failed_quality_gate_returns_non_deployable_result(make_record, sample_workflow) -> None:
+    baseline = make_record(model="large", quality=0.70, baseline=True)
+    candidate = make_record(model="small", quality=0.80)
+
+    result = optimize_records([baseline, candidate], sample_workflow)
+
+    assert result.status == OptimizationStatus.NO_QUALIFYING_CANDIDATE
+    assert result.deployable is False
+    assert result.selections == []
+    assert result.rejections[0].stage_id == "classify"
+    assert result.rejections[0].best_candidate == candidate
+    assert "0.800" in result.rejections[0].reason

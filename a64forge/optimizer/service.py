@@ -8,7 +8,9 @@ from a64forge.optimizer.scorer import score_records
 from a64forge.schemas import (
     BenchmarkRecord,
     OptimizationResult,
+    OptimizationStatus,
     RunLabel,
+    StageRejection,
     StageSelection,
     WorkflowSpec,
 )
@@ -27,11 +29,22 @@ def optimize_records(
     if not records:
         raise ValueError("No benchmark records found. Run a64forge benchmark first.")
     selections: list[StageSelection] = []
+    rejections: list[StageRejection] = []
     baselines: list[BenchmarkRecord] = []
-    for stage_id, stage_records in group_by_stage(records).items():
+    records_by_stage = group_by_stage(records)
+    for stage in workflow.stages:
+        stage_id = stage.id
+        stage_records = records_by_stage.get(stage_id, [])
         successful = [item for item in stage_records if not item.error and item.quality_score is not None]
         if not successful:
-            raise ValueError(f"Stage {stage_id} has no successful measured candidates")
+            rejections.append(
+                StageRejection(
+                    stage_id=stage_id,
+                    quality_floor=workflow.minimum_quality,
+                    reason="No successful measured candidates were available for this stage.",
+                )
+            )
+            continue
         explicit_baselines = [item for item in successful if item.metadata.get("baseline") is True]
         baseline = explicit_baselines[0] if explicit_baselines else max(
             successful, key=lambda item: item.quality_score or 0
@@ -43,9 +56,19 @@ def optimize_records(
         )
         eligible = [item for item in successful if (item.quality_score or 0) >= quality_floor]
         if not eligible:
-            raise ValueError(
-                f"Stage {stage_id} has no candidate meeting quality floor {quality_floor:.3f}"
+            best = max(successful, key=lambda item: item.quality_score or 0)
+            rejections.append(
+                StageRejection(
+                    stage_id=stage_id,
+                    quality_floor=quality_floor,
+                    best_candidate=best,
+                    reason=(
+                        f"Best measured quality {best.quality_score:.3f} did not meet "
+                        f"the {quality_floor:.3f} quality floor."
+                    ),
+                )
             )
+            continue
         pareto = frontier(eligible)
         scores = score_records(pareto, target)
         selected = max(pareto, key=lambda item: scores[id(item)])
@@ -84,7 +107,13 @@ def optimize_records(
         target=target,
         workflow=workflow.name,
         minimum_quality=workflow.minimum_quality,
+        status=(
+            OptimizationStatus.NO_QUALIFYING_CANDIDATE
+            if rejections
+            else OptimizationStatus.DEPLOYABLE
+        ),
         selections=selections,
+        rejections=rejections,
         baseline=baselines,
         run_label=run_label,
     )

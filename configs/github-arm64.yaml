@@ -35,6 +35,17 @@ models:
         filename: Qwen3-1.7B-Q4_K_M.gguf
         size_bytes: 1374389535
         path: models/Qwen3-1.7B-Q4_K_M.gguf
+  - id: large
+    name: Qwen3 4B
+    repo: ggml-org/Qwen3-4B-GGUF
+    parameters_billions: 4.0
+    license: Apache-2.0
+    gated: false
+    variants:
+      - quantization: Q4_K_M
+        filename: Qwen3-4B-Q4_K_M.gguf
+        size_bytes: 2497280640
+        path: models/Qwen3-4B-Q4_K_M.gguf
 
 search:
   threads: [1, 2, 4]

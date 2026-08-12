@@ -116,7 +116,11 @@ def start_compile() -> dict[str, Any]:
     if not results:
         raise HTTPException(status_code=409, detail="Not measured yet. Optimize a benchmark first.")
     files = compile_deployment(results[0], Path("dist").resolve())
-    return {"files": [str(item) for item in files]}
+    return {
+        "status": results[0].status.value,
+        "deployable": results[0].deployable,
+        "files": [str(item) for item in files],
+    }
 
 
 @app.post("/actions/report")
@@ -168,6 +172,11 @@ async def run_workflow(workflow_name: str, payload: dict[str, Any]) -> dict[str,
     results = _store().load_optimizations()
     if not results:
         raise HTTPException(status_code=409, detail="No compiled routing exists yet.")
+    if not results[0].deployable:
+        raise HTTPException(
+            status_code=409,
+            detail="No routing was compiled because at least one stage failed its quality gate.",
+        )
     return {
         "workflow": workflow_name,
         "status": "routing_ready",
@@ -189,4 +198,3 @@ if frontend_dir.exists():
     def frontend(path: str) -> FileResponse:
         candidate = frontend_dir / path
         return FileResponse(candidate if candidate.is_file() else frontend_dir / "index.html")
-

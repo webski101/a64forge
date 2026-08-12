@@ -50,7 +50,34 @@ def generate_report(
             f"<ul>{''.join(f'<li>{html.escape(reason)}</li>' for reason in selection.explanation)}</ul>"
             "</article>"
         )
+    for rejection in result.rejections:
+        before = baseline.get(rejection.stage_id)
+        best = rejection.best_candidate
+        rows.append(
+            "<tr>"
+            f"<th>{html.escape(rejection.stage_id)}</th>"
+            f"<td>{html.escape(before.model if before else 'Not measured yet')}</td>"
+            "<td>Not deployable</td>"
+            f"<td>{_metric(before.median_latency_ms if before else None, ' ms')}</td>"
+            f"<td>{_metric(best.median_latency_ms if best else None, ' ms')}</td>"
+            "<td>Quality gate failed</td>"
+            f"<td>{_metric(best.quality_score if best else None)}</td>"
+            "</tr>"
+        )
+        experiments.append(
+            "<article class='decision rejected'>"
+            f"<h3>{html.escape(rejection.stage_id)}</h3>"
+            "<p class='selection'>No route compiled</p>"
+            f"<p>{html.escape(rejection.reason)}</p>"
+            "</article>"
+        )
     label_class = "verified" if result.run_label.value == "VERIFIED ARM64 RUN" else "unverified"
+    status_class = "verified" if result.deployable else "unverified"
+    status_summary = (
+        "Every workflow stage has a candidate that passed its quality gate."
+        if result.deployable
+        else "Deployment was withheld because one or more stages had no qualifying candidate."
+    )
     document = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>A64Forge report · {html.escape(result.run_id)}</title>
@@ -68,6 +95,8 @@ th,td{{border-bottom:1px solid var(--rule);padding:14px 10px;text-align:left;ver
 <p class="meta">A64FORGE / {html.escape(result.target.upper())} / {result.timestamp.isoformat()}</p>
 <h1>Measured workflow compilation.</h1>
 <p class="label {label_class}">{html.escape(result.run_label.value)}</p>
+<p class="label {status_class}">{html.escape(result.status.value)}</p>
+<p>{html.escape(status_summary)}</p>
 <p>Run <code>{html.escape(result.run_id)}</code> · commit <code>{html.escape(result.baseline[0].git_commit if result.baseline else 'unknown')}</code></p>
 <section><h2>Arm system evidence</h2><div class="hardware">
 <div><span>Architecture</span><b>{html.escape(hardware.architecture)}</b></div><div><span>CPU</span><b>{html.escape(hardware.cpu_model)}</b></div>
@@ -91,6 +120,9 @@ th,td{{border-bottom:1px solid var(--rule);padding:14px 10px;text-align:left;ver
                 "run_id": result.run_id,
                 "optimization_id": result.optimization_id,
                 "workflow": result.workflow,
+                "status": result.status.value,
+                "deployable": result.deployable,
+                "rejected_stages": [item.stage_id for item in result.rejections],
                 "run_label": result.run_label.value,
                 "architecture": hardware.architecture,
                 "cpu": hardware.cpu_model,
@@ -102,4 +134,3 @@ th,td{{border-bottom:1px solid var(--rule);padding:14px 10px;text-align:left;ver
         encoding="utf-8",
     )
     return [report_path, results_path, manifest_path]
-
