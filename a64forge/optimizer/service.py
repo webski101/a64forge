@@ -20,7 +20,10 @@ def _percent_change(before: float | None, after: float | None, lower_is_better: 
     if before is None or after is None or before == 0:
         return None
     change = (before - after) / before * 100 if lower_is_better else (after - before) / before * 100
-    return f"{change:.1f}% {'lower' if lower_is_better else 'higher'}"
+    favorable_direction = "lower" if lower_is_better else "higher"
+    unfavorable_direction = "higher" if lower_is_better else "lower"
+    direction = favorable_direction if change >= 0 else unfavorable_direction
+    return f"{abs(change):.1f}% {direction}"
 
 
 def optimize_records(

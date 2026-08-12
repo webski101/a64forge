@@ -41,3 +41,19 @@ def test_failed_quality_gate_returns_non_deployable_result(make_record, sample_w
     assert result.rejections[0].stage_id == "classify"
     assert result.rejections[0].best_candidate == candidate
     assert "0.800" in result.rejections[0].reason
+
+
+def test_explanation_uses_higher_when_selected_latency_regresses(
+    make_record, sample_workflow
+) -> None:
+    baseline = make_record(
+        model="large", latency=100, memory=900, throughput=40, quality=0.95, baseline=True
+    )
+    slower = make_record(
+        model="small", latency=150, memory=100, throughput=200, quality=0.99
+    )
+
+    result = optimize_records([baseline, slower], sample_workflow)
+
+    explanation = result.selections[0].explanation
+    assert "Median latency: 50.0% higher than baseline." in explanation
