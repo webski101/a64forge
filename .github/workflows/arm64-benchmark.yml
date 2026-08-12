@@ -31,7 +31,7 @@ jobs:
       A64FORGE_CONFIG: configs/github-arm64.yaml
       A64FORGE_DB: .a64forge/github-arm64.db
       A64FORGE_DEV_MODE: "false"
-      HF_HOME: ${{ runner.temp }}/huggingface
+      HF_HOME: ${{ github.workspace }}/.a64forge/huggingface
       LLAMA_CPP_DIR: ${{ github.workspace }}/.a64forge/llama.cpp
       LLAMA_CPP_REF: b9637
 
