@@ -1,0 +1,159 @@
+name: Native Arm64 benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Optimization target
+        required: true
+        default: balanced
+        type: choice
+        options:
+          - balanced
+          - latency
+          - memory
+          - throughput
+          - quality
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a64forge-native-arm64-benchmark
+  cancel-in-progress: false
+
+jobs:
+  benchmark:
+    name: Measure on native Arm64
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 300
+    env:
+      A64FORGE_CONFIG: configs/github-arm64.yaml
+      A64FORGE_DB: .a64forge/github-arm64.db
+      A64FORGE_DEV_MODE: "false"
+      HF_HOME: ${{ runner.temp }}/huggingface
+      LLAMA_CPP_DIR: ${{ github.workspace }}/.a64forge/llama.cpp
+      LLAMA_CPP_REF: b9637
+
+    steps:
+      - name: Check out A64Forge
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Verify native Arm64 host
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "aarch64"
+          mkdir -p evidence
+          uname -a | tee evidence/uname.txt
+          lscpu | tee evidence/lscpu.txt
+          free -h | tee evidence/memory.txt
+          df -h . | tee evidence/disk.txt
+
+      - name: Install build and Python dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake git libcurl4-openssl-dev
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[benchmark]"
+
+      - name: Build pinned llama.cpp for this CPU
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/build_llama_cpp.sh
+          echo "A64FORGE_LLAMA_SERVER=$LLAMA_CPP_DIR/build/bin/llama-server" >> "$GITHUB_ENV"
+          echo "A64FORGE_LLAMA_BENCH=$LLAMA_CPP_DIR/build/bin/llama-bench" >> "$GITHUB_ENV"
+
+      - name: Download bounded model set
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/download_models.py --config "$A64FORGE_CONFIG"
+          du -h models/*
+          df -h .
+
+      - name: Capture and validate host evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD > evidence/a64forge-revision.txt
+          git -C "$LLAMA_CPP_DIR" rev-parse HEAD > evidence/llama-cpp-revision.txt
+          python -m a64forge.cli doctor --json | tee evidence/system.json
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = json.loads(Path("evidence/system.json").read_text())
+          assert evidence["arm64"] is True, evidence
+          assert evidence["dev_mode"] is False, evidence
+          assert evidence["llama_server"] is True, evidence
+          runner = {
+              "provider": "github-actions",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "commit": os.environ["GITHUB_SHA"],
+              "runner_arch": os.environ["RUNNER_ARCH"],
+              "runner_os": os.environ["RUNNER_OS"],
+              "llama_cpp_ref": os.environ["LLAMA_CPP_REF"],
+          }
+          Path("evidence/runner.json").write_text(
+              json.dumps(runner, indent=2), encoding="utf-8"
+          )
+          PY
+
+      - name: Benchmark, optimize, compile, and report
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m a64forge.cli benchmark --config "$A64FORGE_CONFIG"
+          python -m a64forge.cli optimize --target "${{ inputs.target }}"
+          python -m a64forge.cli compile
+          python -m a64forge.cli report
+
+      - name: Validate verified evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          manifests = list(Path("reports").glob("*/manifest.json"))
+          assert len(manifests) == 1, manifests
+          manifest = json.loads(manifests[0].read_text())
+          assert manifest["run_label"] == "VERIFIED ARM64 RUN", manifest
+          summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with summary.open("a", encoding="utf-8") as handle:
+              handle.write("# A64Forge native Arm64 evidence\n\n")
+              handle.write(f"- Run: `{manifest['run_id']}`\n")
+              handle.write(f"- Label: **{manifest['run_label']}**\n")
+              handle.write(f"- Architecture: `{manifest['architecture']}`\n")
+              handle.write(f"- CPU: `{manifest['cpu']}`\n")
+              handle.write("- Download the `a64forge-arm64-evidence` artifact for the report.\n")
+          PY
+
+      - name: Upload benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a64forge-arm64-evidence-${{ github.run_id }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            evidence/
+            benchmarks/
+            reports/
+            dist/
+            .a64forge/github-arm64.db

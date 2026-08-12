@@ -1,0 +1,52 @@
+/* Hallmark · pre-emit critique: P5 H4 E4 S5 R5 V4 */
+/* Hallmark · genre: atmospheric · macrostructure: Workbench · theme: Terminal · enrichment: Tier-A workflow graph · nav: N3 · footer: Ft2 */
+:root {
+  --color-paper: oklch(13% 0.012 155);
+  --color-paper-2: oklch(17% 0.014 155);
+  --color-paper-3: oklch(21% 0.016 155);
+  --color-panel: oklch(18% 0.013 155);
+  --color-panel-raised: oklch(23% 0.016 155);
+  --color-rule: oklch(31% 0.018 155);
+  --color-rule-strong: oklch(42% 0.028 155);
+  --color-muted: oklch(67% 0.018 155);
+  --color-body: oklch(82% 0.014 155);
+  --color-ink: oklch(94% 0.012 145);
+  --color-accent: oklch(78% 0.17 142);
+  --color-accent-ink: oklch(16% 0.03 150);
+  --color-focus: oklch(84% 0.18 142);
+  --color-warning: oklch(80% 0.14 78);
+  --color-danger: oklch(68% 0.18 28);
+  --color-info: oklch(72% 0.13 235);
+  --color-overlay: oklch(7% 0.01 155 / 0.76);
+  --font-display: "Space Grotesk", "Aptos Display", sans-serif;
+  --font-body: "IBM Plex Sans", "Aptos", sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", monospace;
+  --space-3xs: 0.125rem;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+  --text-xs: 0.64rem;
+  --text-sm: 0.8rem;
+  --text-base: 1rem;
+  --text-md: 1.25rem;
+  --text-lg: 1.5625rem;
+  --text-xl: 1.9531rem;
+  --text-2xl: 2.4414rem;
+  --text-display: clamp(2.4rem, 4.5vw, 4.6rem);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+  --rule-thin: 1px;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+}
+

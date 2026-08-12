@@ -1,0 +1,3 @@
+{"input":"Evidence: A64Forge benchmarks each workflow stage independently. It applies a minimum quality gate. It compiles selected configurations into routing.yaml.","expected":{"facts":["each workflow stage","minimum quality","routing.yaml"]}}
+{"input":"Evidence: Baseline and candidates use the same dataset. Each candidate has one warm-up. Reported latency is the median of three measured runs.","expected":{"facts":["same dataset","one warm-up","median","three measured runs"]}}
+

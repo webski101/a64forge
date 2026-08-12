@@ -1,0 +1,18 @@
+services:
+  a64forge:
+    build:
+      context: .
+      dockerfile: Dockerfile.arm64
+      platforms: ["linux/arm64"]
+    platform: linux/arm64
+    environment:
+      A64FORGE_DEV_MODE: "false"
+      A64FORGE_CONFIG: /workspace/configs/default.yaml
+      A64FORGE_MODEL_DIR: /models
+    ports:
+      - "8640:8640"
+    volumes:
+      - ./models:/models:ro
+      - ./benchmarks:/workspace/benchmarks
+      - ./reports:/workspace/reports
+

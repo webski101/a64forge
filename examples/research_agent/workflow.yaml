@@ -1,0 +1,36 @@
+name: research-ops
+description: Deterministic multi-stage research request processing over bundled evidence.
+minimum_quality: 0.80
+maximum_quality_drop: 0.05
+stages:
+  - id: classify
+    type: classification
+    quality_metric: exact_match
+    dataset: data/classify.jsonl
+    prompt: Classify the research request as market, technical, policy, or general. Return one label only.
+    max_tokens: 12
+  - id: extract
+    type: extraction
+    quality_metric: structured_accuracy
+    dataset: data/extract.jsonl
+    prompt: Extract topic, region, and date_range as strict JSON. Use null when absent.
+    max_tokens: 96
+  - id: tool_select
+    type: tool_selection
+    quality_metric: tool_accuracy
+    dataset: data/tool_select.jsonl
+    prompt: Select one tool from local_search, calculator, timeline, or compare. Return the tool name only.
+    max_tokens: 12
+  - id: reason
+    type: reasoning
+    quality_metric: reference_coverage
+    dataset: data/reason.jsonl
+    prompt: Answer from the provided evidence. Include every material fact; do not add unsupported facts.
+    max_tokens: 192
+  - id: summarize
+    type: summarization
+    quality_metric: factual_coverage
+    dataset: data/summarize.jsonl
+    prompt: Summarize the evidence in three concise bullets while preserving all named facts.
+    max_tokens: 160
+

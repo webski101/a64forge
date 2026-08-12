@@ -1,0 +1,8 @@
+{
+  "date": "2026-08-09",
+  "font_stack": "Space Grotesk / IBM Plex Sans / JetBrains Mono",
+  "palette": "tinted ink with restrained Arm green",
+  "motion": "motion-cut",
+  "spacing": "none",
+  "framework": "greenfield React + Vite"
+}

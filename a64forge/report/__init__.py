@@ -1,0 +1,2 @@
+"""Portable report generation."""
+

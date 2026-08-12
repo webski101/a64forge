@@ -1,0 +1,5 @@
+{"input":"Find all bundled notes that mention SVE2.","expected":"local_search"}
+{"input":"Calculate the percentage reduction from 4096 MB to 1536 MB.","expected":"calculator"}
+{"input":"Put the challenge milestones in date order.","expected":"timeline"}
+{"input":"Compare two benchmark configurations across latency and memory.","expected":"compare"}
+

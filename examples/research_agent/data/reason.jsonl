@@ -1,0 +1,3 @@
+{"input":"Evidence: Config A has 840 ms median latency and 2200 MB peak RSS. Config B has 510 ms median latency and 1450 MB peak RSS. Both score 0.94 quality. Which is preferable for latency and memory?","expected":{"facts":["Config B","510 ms","1450 MB","0.94"]}}
+{"input":"Evidence: The run label is DEMO DATA. The host architecture is x86_64. Can this be submitted as verified Arm evidence?","expected":{"facts":["no","DEMO DATA","x86_64"]}}
+

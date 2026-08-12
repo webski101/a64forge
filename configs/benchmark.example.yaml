@@ -1,0 +1,10 @@
+search:
+  threads: [2, 4, 8]
+  batch_sizes: [128, 512]
+  context_sizes: [1024, 2048]
+  repetitions: 3
+  warmups: 1
+  max_candidates: 12
+  max_runtime_seconds: 1800
+  max_memory_gb: 12
+

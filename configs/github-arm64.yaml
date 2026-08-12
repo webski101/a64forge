@@ -1,0 +1,51 @@
+version: "1"
+workflow: examples/research_agent/workflow.yaml
+baseline_model: medium
+baseline_quantization: Q4_K_M
+baseline_threads: 4
+baseline_batch_size: 128
+baseline_context_size: 1024
+
+# Sized for GitHub's standard native Arm64 runner. This does not replace
+# configs/default.yaml; it is a bounded evidence profile for ephemeral CI.
+models:
+  - id: small
+    name: Qwen3 0.6B
+    repo: ggml-org/Qwen3-0.6B-GGUF
+    parameters_billions: 0.6
+    license: Apache-2.0
+    gated: false
+    variants:
+      - quantization: Q4_0
+        filename: Qwen3-0.6B-Q4_0.gguf
+        size_bytes: 449839104
+        path: models/Qwen3-0.6B-Q4_0.gguf
+      - quantization: Q8_0
+        filename: Qwen3-0.6B-Q8_0.gguf
+        size_bytes: 844103680
+        path: models/Qwen3-0.6B-Q8_0.gguf
+  - id: medium
+    name: Qwen3 1.7B
+    repo: ggml-org/Qwen3-1.7B-GGUF
+    parameters_billions: 1.7
+    license: Apache-2.0
+    gated: false
+    variants:
+      - quantization: Q4_K_M
+        filename: Qwen3-1.7B-Q4_K_M.gguf
+        size_bytes: 1374389535
+        path: models/Qwen3-1.7B-Q4_K_M.gguf
+
+search:
+  threads: [1, 2, 4]
+  batch_sizes: [64, 128, 256]
+  context_sizes: [512, 1024, 2048]
+  repetitions: 2
+  warmups: 1
+  max_candidates: 20
+  max_runtime_seconds: 14400
+  max_memory_gb: 6
+  request_timeout_seconds: 240
+
+cloud:
+  hourly_cost_usd: 0
