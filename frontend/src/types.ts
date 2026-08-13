@@ -22,6 +22,8 @@ export interface Hardware {
   llama_version: string | null;
   disk_free_gb: number;
   dev_mode: boolean;
+  evidence_source?: "current_host" | "imported_verified_run";
+  evidence_run_id?: string | null;
 }
 
 export interface ModelVariant {

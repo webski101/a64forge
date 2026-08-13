@@ -5,7 +5,7 @@ import sqlite3
 from collections.abc import Iterable
 from pathlib import Path
 
-from a64forge.schemas import BenchmarkRecord, OptimizationResult
+from a64forge.schemas import BenchmarkRecord, HardwareInfo, OptimizationResult
 
 
 class EvidenceStore:
@@ -40,6 +40,11 @@ class EvidenceStore:
                     payload TEXT NOT NULL,
                     created_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS hardware_snapshots (
+                    run_id TEXT PRIMARY KEY,
+                    payload TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                );
                 """
             )
 
@@ -67,6 +72,13 @@ class EvidenceStore:
                 "VALUES (?, ?, ?, ?, ?, ?)",
                 rows,
             )
+
+    def has_run(self, run_id: str) -> bool:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT 1 FROM benchmark_records WHERE run_id = ? LIMIT 1", (run_id,)
+            ).fetchone()
+            return row is not None
 
     def load_records(self, run_id: str | None = None) -> list[BenchmarkRecord]:
         query = "SELECT payload FROM benchmark_records"
@@ -109,3 +121,26 @@ class EvidenceStore:
             rows = connection.execute("SELECT payload FROM optimizations ORDER BY created_at DESC")
             return [OptimizationResult.model_validate(json.loads(row["payload"])) for row in rows]
 
+    def save_hardware(self, run_id: str, hardware: HardwareInfo, created_at: str) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT OR REPLACE INTO hardware_snapshots "
+                "(run_id, payload, created_at) VALUES (?, ?, ?)",
+                (run_id, hardware.model_dump_json(), created_at),
+            )
+
+    def load_latest_hardware(self) -> tuple[str, HardwareInfo] | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT run_id, payload FROM hardware_snapshots ORDER BY created_at DESC LIMIT 1"
+            ).fetchone()
+        if row is None:
+            return None
+        return row["run_id"], HardwareInfo.model_validate_json(row["payload"])
+
+    def load_hardware(self, run_id: str) -> HardwareInfo | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT payload FROM hardware_snapshots WHERE run_id = ?", (run_id,)
+            ).fetchone()
+        return None if row is None else HardwareInfo.model_validate_json(row["payload"])

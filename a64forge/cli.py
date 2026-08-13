@@ -9,8 +9,9 @@ import typer
 
 from a64forge.benchmark.runner import load_demo_records
 from a64forge.config import ConfigError, load_project_config, load_workflow, write_default_project
+from a64forge.evidence import import_evidence
 from a64forge.optimizer.compiler import compile_deployment
-from a64forge.optimizer.service import optimize_records
+from a64forge.optimizer.service import optimize_records, override_baseline
 from a64forge.profiler.hardware import detect_hardware
 from a64forge.profiler.workflow import analyze_workflow
 from a64forge.report.generator import generate_report
@@ -65,6 +66,22 @@ def analyze(path: Path) -> None:
     typer.echo(result.model_dump_json(indent=2))
 
 
+@app.command("import-evidence")
+def import_evidence_command(source: Path) -> None:
+    """Import a verified Arm64 GitHub artifact into the local dashboard."""
+    try:
+        result = import_evidence(source, _store())
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    state = "Already imported" if result.already_imported else "Imported"
+    typer.echo(
+        f"{state} {result.records} VERIFIED ARM64 records — run {result.run_id}\n"
+        f"Optimization: {result.status}\n"
+        f"Report: {result.report}\n"
+        f"Deployment: {result.deployment}"
+    )
+
+
 @app.command()
 def benchmark(
     config_path: Annotated[Path | None, typer.Option("--config")] = None,
@@ -95,12 +112,24 @@ def benchmark(
 def optimize(
     target: Annotated[str, typer.Option(help="latency, memory, throughput, balanced, or quality")] = "balanced",
     run_id: Annotated[str | None, typer.Option("--run-id")] = None,
+    baseline: Annotated[
+        str | None,
+        typer.Option(
+            "--baseline",
+            help="Measured candidate key, for example large:Q4_K_M:t1:b64:c512.",
+        ),
+    ] = None,
 ) -> None:
     """Apply quality gates, compute Pareto frontiers, and select stage routing."""
     store = _store()
     records = store.load_records(run_id)
     if not records:
         raise typer.BadParameter("Not measured yet. Run `a64forge benchmark` first.")
+    if baseline:
+        try:
+            records = override_baseline(records, baseline)
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc)) from exc
     workflow = load_workflow(load_project_config().workflow)
     result = optimize_records(records, workflow, target)
     store.save_optimization(result)
@@ -123,7 +152,8 @@ def report(destination: Path = Path("reports")) -> None:
     results = _store().load_optimizations()
     if not results:
         raise typer.BadParameter("Not measured yet. Run `a64forge optimize` first.")
-    files = generate_report(results[0], detect_hardware(), destination.resolve())
+    hardware = _store().load_hardware(results[0].run_id) or detect_hardware()
+    files = generate_report(results[0], hardware, destination.resolve())
     typer.echo("\n".join(str(item) for item in files))
 
 
@@ -150,4 +180,3 @@ def serve(
 
 if __name__ == "__main__":
     app()
-

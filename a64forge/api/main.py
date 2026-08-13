@@ -14,7 +14,7 @@ from a64forge import __version__
 from a64forge.api.events import broker
 from a64forge.config import ConfigError, load_project_config, load_workflow
 from a64forge.optimizer.compiler import compile_deployment
-from a64forge.optimizer.service import optimize_records
+from a64forge.optimizer.service import optimize_records, override_baseline
 from a64forge.profiler.hardware import detect_hardware
 from a64forge.report.generator import generate_report
 from a64forge.schemas import ProgressEvent
@@ -26,6 +26,22 @@ app = FastAPI(title="A64Forge", version=__version__)
 
 def _store() -> EvidenceStore:
     return EvidenceStore(database_path())
+
+
+def _system_payload() -> dict[str, Any]:
+    captured = _store().load_latest_hardware()
+    if captured is not None:
+        run_id, hardware = captured
+        return {
+            **hardware.model_dump(mode="json"),
+            "evidence_source": "imported_verified_run",
+            "evidence_run_id": run_id,
+        }
+    return {
+        **detect_hardware().model_dump(mode="json"),
+        "evidence_source": "current_host",
+        "evidence_run_id": None,
+    }
 
 
 @app.get("/health")
@@ -41,7 +57,7 @@ def health() -> dict[str, object]:
 
 @app.get("/system")
 def system() -> dict[str, Any]:
-    return detect_hardware().model_dump(mode="json")
+    return _system_payload()
 
 
 @app.get("/models")
@@ -101,6 +117,15 @@ def start_optimize(target: str = "balanced", run_id: str | None = None) -> dict[
     records = store.load_records(run_id)
     if not records:
         raise HTTPException(status_code=409, detail="Not measured yet. Run a benchmark first.")
+    previous = store.load_optimizations()
+    if previous and previous[0].run_id == records[0].run_id:
+        baseline_keys = {
+            f"{item.model}:{item.quantization}:t{item.threads}:"
+            f"b{item.batch_size}:c{item.context_size}"
+            for item in previous[0].baseline
+        }
+        if len(baseline_keys) == 1:
+            records = override_baseline(records, baseline_keys.pop())
     workflow = load_workflow(load_project_config().workflow)
     try:
         result = optimize_records(records, workflow, target)
@@ -125,10 +150,12 @@ def start_compile() -> dict[str, Any]:
 
 @app.post("/actions/report")
 def start_report() -> dict[str, Any]:
-    results = _store().load_optimizations()
+    store = _store()
+    results = store.load_optimizations()
     if not results:
         raise HTTPException(status_code=409, detail="Not measured yet. Optimize a benchmark first.")
-    files = generate_report(results[0], detect_hardware(), Path("reports").resolve())
+    hardware = store.load_hardware(results[0].run_id) or detect_hardware()
+    files = generate_report(results[0], hardware, Path("reports").resolve())
     return {"files": [str(item) for item in files]}
 
 

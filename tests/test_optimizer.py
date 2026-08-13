@@ -1,6 +1,6 @@
 from a64forge.optimizer.pareto import dominates, frontier
 from a64forge.optimizer.scorer import score_records
-from a64forge.optimizer.service import optimize_records
+from a64forge.optimizer.service import optimize_records, override_baseline
 from a64forge.schemas import OptimizationStatus
 
 
@@ -57,3 +57,12 @@ def test_explanation_uses_higher_when_selected_latency_regresses(
 
     explanation = result.selections[0].explanation
     assert "Median latency: 50.0% higher than baseline." in explanation
+
+
+def test_override_baseline_uses_exact_measured_candidate(make_record) -> None:
+    small = make_record(model="small")
+    large = make_record(model="large")
+    updated = override_baseline([small, large], "large:Q4_K_M:t4:b256:c2048")
+    assert updated[0].metadata["baseline"] is False
+    assert updated[1].metadata["baseline"] is True
+    assert large.metadata["baseline"] is False

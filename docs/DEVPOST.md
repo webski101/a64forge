@@ -26,19 +26,18 @@ Same host, dataset hash, generation limits, warm-up count, and measured repetiti
 
 ## Challenges we ran into
 
-Separating responsive developer UX from scientific evidence, and keeping optional performance tools from becoming hard dependencies.
+Our first bounded run showed that a 1.7B baseline could not meet classification quality. We preserved the 0.80 quality floor, added a measured 4B candidate, and made “no qualifying candidate” a first-class non-deployable result instead of weakening the gate. We also separated captured Arm64 evidence from the machine viewing the dashboard so a Windows development host is never presented as the benchmark host.
 
 ## Accomplishments we're proud of
 
-The optimization system—not the sample agent—is the product. It emits reusable routing and evidence artifacts.
+The optimization system—not the sample agent—is the product. A native `aarch64` run measured 20 configurations and compiled a five-stage routing that keeps Qwen3-4B only where quality requires it, uses Qwen3-1.7B for extraction, and Qwen3-0.6B for reasoning and summarization. It emits reusable routing, Docker, manifest, and evidence artifacts.
 
 ## What we learned
 
-{{ARM64_LEARNING}}
+Workflow-aware optimization matters more than choosing one universally “fast” model. On the same Arm host, smaller models improved reasoning and summarization efficiency, while classification and tool selection still required the 4B model to protect quality. Arm feature evidence and model hashes made that tradeoff reproducible rather than anecdotal.
 
 ## What's next for A64Forge
 
 Additional workflow adapters, remote Arm workers, vLLM/ExecuTorch runtimes, and CI regression gates.
 
-Final measured results: {{REAL_LATENCY_IMPROVEMENT}}, {{REAL_MEMORY_REDUCTION}}, {{REAL_THROUGHPUT_IMPROVEMENT}}, {{REAL_QUALITY_CHANGE}}.
-
+Final verified result against the measured all-Qwen3-4B Q4 workflow baseline: **67.8% lower average stage latency**, **42.9% lower average peak RSS**, **244.5% higher average request throughput**, and **6.7% higher average deterministic quality**. All values come from run `run-1488b44fa409` on one native `aarch64` GitHub runner with the same per-stage datasets and generation constraints.

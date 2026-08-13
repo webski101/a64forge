@@ -16,6 +16,33 @@ from a64forge.schemas import (
 )
 
 
+def override_baseline(
+    records: Sequence[BenchmarkRecord], candidate_key: str
+) -> list[BenchmarkRecord]:
+    """Return records with one measured candidate per stage marked as the baseline."""
+    updated: list[BenchmarkRecord] = []
+    matches: dict[str, int] = {}
+    stages = {record.stage_id for record in records}
+    for record in records:
+        key = (
+            f"{record.model}:{record.quantization}:t{record.threads}:"
+            f"b{record.batch_size}:c{record.context_size}"
+        )
+        is_baseline = key == candidate_key
+        if is_baseline:
+            matches[record.stage_id] = matches.get(record.stage_id, 0) + 1
+        metadata = {**record.metadata, "baseline": is_baseline}
+        updated.append(record.model_copy(update={"metadata": metadata}, deep=True))
+    invalid = sorted(stage for stage in stages if matches.get(stage) != 1)
+    if invalid:
+        joined = ", ".join(invalid)
+        raise ValueError(
+            f"Baseline {candidate_key!r} must match exactly one measured candidate for every "
+            f"stage; invalid stages: {joined}"
+        )
+    return updated
+
+
 def _percent_change(before: float | None, after: float | None, lower_is_better: bool) -> str | None:
     if before is None or after is None or before == 0:
         return None

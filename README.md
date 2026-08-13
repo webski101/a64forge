@@ -4,7 +4,7 @@
 
 > Most AI agents use oversized models and generic inference settings for every stage. A64Forge profiles each stage, searches model and runtime configurations directly on Arm64 hardware, protects a user-defined quality threshold, and compiles the result into an optimized deployment backed by reproducible benchmark evidence.
 
-<!-- Final submission: add a screenshot from a VERIFIED ARM64 RUN here. -->
+The verified dashboard can be reproduced locally from the public evidence artifact using the commands below.
 
 A64Forge is not a chatbot and not a static benchmark dashboard. The optimization system is the product: workflow specification → bounded real experiments → deterministic quality gates → Pareto frontier → stage-aware routing → portable evidence and deployment artifacts.
 
@@ -15,6 +15,19 @@ A five-stage agent commonly routes classification, extraction, tool selection, r
 It answers a workflow-level question:
 
 > Which combination of models and runtime configurations gives this entire multi-stage workload the best measured quality/performance tradeoff on this exact Arm64 machine?
+
+## Verified Arm64 result
+
+Run [`run-1488b44fa409`](https://github.com/webski101/a64forge/actions/runs/31646296185) measured 20 candidates on a native `aarch64` GitHub runner at commit `b414b9e`. Against the measured all-Qwen3-4B Q4 workflow baseline (`large:Q4_K_M:t1:b64:c512`), the balanced stage-aware routing achieved:
+
+| Workflow-average metric | Baseline | A64Forge | Change |
+| --- | ---: | ---: | ---: |
+| Median stage latency | 12,248.46 ms | 3,947.69 ms | **67.8% lower** |
+| Peak RSS | 4,897.91 MB | 2,796.18 MB | **42.9% lower** |
+| Throughput | 5.93 req/min | 20.43 req/min | **244.5% higher** |
+| Deterministic quality | 0.875 | 0.933 | **6.7% higher** |
+
+These aggregates are derived from measured records in one artifact; they are not cross-host estimates. Classification and tool selection retain Qwen3-4B, extraction uses Qwen3-1.7B, and reasoning and summarization use Qwen3-0.6B. The 0.80 workflow quality gate remains enforced.
 
 ## What works
 
@@ -50,6 +63,7 @@ flowchart LR
 ```
 
 See [docs/architecture.md](docs/architecture.md) and [docs/research.md](docs/research.md).
+Full measurement provenance: [docs/VERIFIED_RESULTS.md](docs/VERIFIED_RESULTS.md).
 
 ## Why Arm
 
@@ -77,6 +91,19 @@ a64forge serve
 ```
 
 Open [http://127.0.0.1:8640](http://127.0.0.1:8640). Development mode shows no invented benchmark data.
+
+To inspect a verified artifact on a non-Arm development machine:
+
+```bash
+a64forge import-evidence a64forge-arm64-evidence-31646296185.zip
+a64forge optimize --run-id run-1488b44fa409 \
+  --baseline large:Q4_K_M:t1:b64:c512 --target balanced
+a64forge compile
+a64forge report
+a64forge serve
+```
+
+The dashboard labels captured hardware as imported evidence; it does not claim the current development computer is Arm64.
 
 ## Run on Arm64
 
@@ -113,10 +140,11 @@ Full instructions: [docs/RUN_ON_ARM.md](docs/RUN_ON_ARM.md).
 a64forge doctor [--json]
 a64forge init [DESTINATION]
 a64forge analyze PATH
+a64forge import-evidence ARTIFACT.zip
 a64forge benchmark [--max-memory GB] [--max-runtime SEC] [--max-candidates N]
-a64forge optimize --target latency|memory|throughput|balanced|quality
-a64forge compile [DESTINATION]
-a64forge report [DESTINATION]
+a64forge optimize --target latency|memory|throughput|balanced|quality [--baseline CANDIDATE_KEY]
+a64forge compile [--destination PATH]
+a64forge report [--destination PATH]
 a64forge autopilot
 a64forge serve
 ```
