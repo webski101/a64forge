@@ -159,6 +159,16 @@ def start_report() -> dict[str, Any]:
     return {"files": [str(item) for item in files]}
 
 
+@app.get("/reports/{run_id}/report.html", include_in_schema=False)
+def open_report(run_id: str) -> FileResponse:
+    if not run_id.startswith("run-") or not run_id.replace("-", "").isalnum():
+        raise HTTPException(status_code=404, detail="Unknown report")
+    report = Path("reports").resolve() / run_id / "report.html"
+    if not report.is_file():
+        raise HTTPException(status_code=404, detail="Report has not been generated")
+    return FileResponse(report)
+
+
 @app.get("/events")
 async def events() -> StreamingResponse:
     queue = broker.subscribe()

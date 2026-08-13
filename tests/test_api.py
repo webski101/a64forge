@@ -14,3 +14,8 @@ def test_health_and_system_endpoints(monkeypatch, tmp_path) -> None:
     assert system.status_code == 200
     assert system.json()["dev_mode"] is True
 
+
+def test_report_route_rejects_unknown_report() -> None:
+    client = TestClient(app)
+    response = client.get("/reports/not-a-run/report.html")
+    assert response.status_code == 404
