@@ -10,8 +10,7 @@ A64Forge is not a chatbot and not a static benchmark dashboard. The optimization
 
 ## Live read-only evidence
 
-- **Public evidence site:** [a64forge-evidence.mmadubuikechisom1.chatgpt.site](https://a64forge-evidence.mmadubuikechisom1.chatgpt.site)
-- **Vercel mirror:** [a64forge-evidence-mmadubuikechisom1-4579s-projects.vercel.app](https://a64forge-evidence-mmadubuikechisom1-4579s-projects.vercel.app) *(Vercel Authentication is currently enabled.)*
+- **Public evidence site:** https://a64forge-evidence.vercel.app/
 
 These deployments publish the completed verified Arm64 dashboard, report, routing file, and raw evidence. They are intentionally read-only: they do not run benchmarks, host an inference server, modify results, or require a persistent Arm64 machine.
 
