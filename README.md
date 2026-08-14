@@ -8,6 +8,13 @@ The verified dashboard can be reproduced locally from the public evidence artifa
 
 A64Forge is not a chatbot and not a static benchmark dashboard. The optimization system is the product: workflow specification → bounded real experiments → deterministic quality gates → Pareto frontier → stage-aware routing → portable evidence and deployment artifacts.
 
+## Live read-only evidence
+
+- **Public evidence site:** [a64forge-evidence.mmadubuikechisom1.chatgpt.site](https://a64forge-evidence.mmadubuikechisom1.chatgpt.site)
+- **Vercel mirror:** [a64forge-evidence-mmadubuikechisom1-4579s-projects.vercel.app](https://a64forge-evidence-mmadubuikechisom1-4579s-projects.vercel.app) *(Vercel Authentication is currently enabled.)*
+
+These deployments publish the completed verified Arm64 dashboard, report, routing file, and raw evidence. They are intentionally read-only: they do not run benchmarks, host an inference server, modify results, or require a persistent Arm64 machine.
+
 ## Why this exists
 
 A five-stage agent commonly routes classification, extraction, tool selection, reasoning, and summarization through the same large model. That is easy to deploy, but it may waste memory and CPU time. A64Forge measures whether smaller or differently quantized models can serve individual stages without violating the workflow’s quality floor.
